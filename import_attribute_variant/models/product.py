@@ -21,7 +21,11 @@ class ProductAttributeLine(models.Model):
                             prod_templ = self.env['product.template'].search([
                                 ('active', '=?', False), ('id_externe', '=', val[1])
                             ])
-                            modified_row['product_tmpl_id'] = prod_templ  # self.env.ref(str(value))
+                            modified_row[
+                                'product_tmpl_id'] = prod_templ  # self.env.ref(str(value))
+
+                        # if key == 'attribute_line_ids/id':
+                        #     modified_row['line'] = self.env.ref(str(value)) or False
 
                         if key == 'attribute_line_ids/attribute_id/id':
                             modified_row['attribute_id'] = self.env.ref(str(value))
@@ -52,3 +56,29 @@ class ProductAttributeLine(models.Model):
 
         except Exception as exc:
             _logger.error(f"=>>>>> : {exc}")
+
+    def remove_attribute_double(self):
+        for rec in self.env['product.template.attribute.line'].with_context(active_test=False).search([]):
+            if not rec.exists():
+                _logger.warning(f"Enregistrement inexistant ou supprimé : {rec}")
+                continue
+
+            seen = {}
+            duplicates = self.env['product.template.attribute.line']
+
+            if not rec.product_tmpl_id.active:
+                _logger.info(f"Archived product template ===>: {rec.product_tmpl_id.id}__{rec.product_tmpl_id.default_code}: {rec.product_tmpl_id.name}")
+
+            for line in rec.product_tmpl_id.attribute_line_ids:
+                attribute_id = line.attribute_id.id
+                value_ids = tuple(sorted(line.value_ids.ids))
+
+                if (attribute_id, value_ids) in seen:
+                    duplicates |= line
+                else:
+                    seen[(attribute_id, value_ids)] = line
+
+                _logger.warning(f"=====>> : {line}")
+
+            if duplicates:
+                duplicates.unlink()
