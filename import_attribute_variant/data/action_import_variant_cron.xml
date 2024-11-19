@@ -13,5 +13,18 @@
             <field name="state">code</field>
             <field name="code">model.import_attribute_line()</field>
         </record>
+
+        <record id="remove_attribute_double_cron" forcecreate='True' model="ir.cron">
+            <field name="name">Remove Attribute Double</field>
+            <field eval="True" name="active"/>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="nextcall" eval="(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d 18:00:00')"/>
+            <field name="model_id" ref="model_product_template_attribute_line"/>
+            <field name="state">code</field>
+            <field name="code">model.remove_attribute_double()</field>
+        </record>
     </data>
 </odoo>
